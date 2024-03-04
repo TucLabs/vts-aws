@@ -33,7 +33,21 @@ jobs:
           REMOTE_USER: ${{secrets.EC2_USERNAME}}
           TARGET: "~/app"
           EXCLUDE: "/node_modules/, **.env, rebuild_app.sh, watcher.sh"
-          SCRIPT_AFTER: |
-            cd /home/${{secrets.EC2_USERNAME}}/app
-            npm install
-            npx pm2 restart all
+        with:
+          script: "pm2 restart all"
+
+      - name: Restart Server
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_KEY }}
+          HOSTNAME: ${{secrets.EC2_HOST}}
+          USER_NAME: ${{secrets.EC2_USERNAME}}
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+              export HOME=/home/ubuntu
+              export PATH=$PATH:/home/ubuntu/.nvm/versions/node/v20.11.1/bin
+              cd /home/ubuntu/app
+              npm install
+              /home/ubuntu/.nvm/versions/node/v20.11.1/bin/pm2 restart all
+            '
